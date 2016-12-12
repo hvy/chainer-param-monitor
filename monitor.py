@@ -1,8 +1,27 @@
 import numpy as np
 from functools import reduce
 
+"""
+A collection of functions that extract statistics for given models such as
+instances of chainer.Chain in an dictionary.
+"""
 
-def sparsity(model, param_names=('W', 'b')):
+def get_params(model, param_names=('W', 'b')):
+    """Return all parameters (weights and biases) for the given model."""
+    params = _flattened_params(model, attr='data')
+    report = _as_report(params, prefix=model.name)
+    return report
+
+
+def get_grads(model):
+    """Return all currently stored gradient of the model."""
+    grads = _flattened_params(model, attr='grad')
+    report = _as_report(grads, prefix=model.name + '/grad')
+    return report
+
+
+def get_sparsity(model, param_names=('W', 'b')):
+    """Return number of zeros for the given model. """
     def _count_zeros(memo, param):
         if param.name in param_names:
             memo[param.name] += param.data.size - \
@@ -11,28 +30,13 @@ def sparsity(model, param_names=('W', 'b')):
 
     n_zeros = reduce(_count_zeros, model.params(),
                      {pn: 0 for pn in param_names})
-
     report = {'{}/{}/n_zeros/'.format(model.name, pn): n_zeros[pn] \
               for pn in param_names}
 
     return report
 
 
-def params(model):
-    """Return all parameters values of the given model."""
-    params = flattened_params(model, attr='data')
-    report = as_report(params, prefix=model.name)
-    return report
-
-
-def grads(model):
-    """Return all currently stored gradient of the model."""
-    grads = flattened_params(model, attr='grad')
-    report = as_report(grads, prefix=model.name + '/grad')
-    return report
-
-
-def flattened_params(model, param_names=('W', 'b'), attr='data'):
+def _flattened_params(model, param_names=('W', 'b'), attr='data'):
     def _append(memo, param):
         if param.name in param_names:
             # Flatten before appending so that we can concatenate everything
@@ -46,7 +50,7 @@ def flattened_params(model, param_names=('W', 'b'), attr='data'):
     return params
 
 
-def as_report(data, prefix=''):
+def _as_report(data, prefix=''):
     stats = {}
     for name in ['W', 'b']:
         d = data[name]

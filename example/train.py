@@ -4,7 +4,6 @@ from chainer import optimizers, cuda
 from chainer import datasets, iterators, training
 from chainer.training import extensions
 from models import CNN
-from extensions import ParameterHistogram, ParameterReport
 
 
 def parse_args():
@@ -22,6 +21,7 @@ def main(args):
                                          shuffle=False)
 
     model = L.Classifier(CNN())
+
     if args.gpu >= 0:
         cuda.check_cuda_available()
         cuda.get_device(args.gpu).use()
@@ -34,20 +34,12 @@ def main(args):
 
     trainer = training.Trainer(updater, (args.epochs, 'epoch'))
     trainer.extend(extensions.Evaluator(test_iter, model, device=args.gpu))
-    # trainer.extend(extensions.snapshot())
     trainer.extend(extensions.LogReport())  # Default log report
-    """
-    trainer.extend(extensions.LogReport(
-            keys=['W/min','W/max', 'W/mean', 'W/std'],
-            log_name='params', trigger=(1, 'iteration')))
-    """
     trainer.extend(extensions.PrintReport(['epoch', 'main/loss',
                                            'main/accuracy',
                                            'validation/main/loss',
                                            'validation/main/accuracy']))
     trainer.extend(extensions.ProgressBar())
-    # trainer.extend(ParameterHistogram(), trigger=(1, 'epoch'))
-    # trainer.extend(ParameterReport(), trigger=(1, 'epoch'))
     trainer.run()
 
 

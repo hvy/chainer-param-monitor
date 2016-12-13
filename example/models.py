@@ -1,6 +1,11 @@
 import chainer
 from chainer import links as L
 from chainer import functions as F
+
+import os, sys
+project_root = os.path.abspath('..')
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 import monitor
 
 
@@ -13,8 +18,11 @@ class CNN(chainer.Chain):
             l1=L.Linear(None, 1024),
             l2=L.Linear(None, 10)
         )
+        self.monitored_layers = ['c1', 'c2', 'c3']
 
     def __call__(self, x):
+        # Collect and report the statistics from the previous call before
+        # proceeding with this forward propagation.
         self.report()
 
         h = self.c1(x)
@@ -25,42 +33,20 @@ class CNN(chainer.Chain):
         return h
 
     def report(self):
-        paramstats = monitor.weight_statistics(self, 'c1')
-        chainer.report(paramstats)
-        paramstats = monitor.weight_statistics(self, 'c2')
-        chainer.report(paramstats)
-        paramstats = monitor.weight_statistics(self, 'c3')
-        chainer.report(paramstats)
-        paramstats = monitor.bias_statistics(self, 'c1')
-        chainer.report(paramstats)
-        paramstats = monitor.bias_statistics(self, 'c2')
-        chainer.report(paramstats)
-        paramstats = monitor.bias_statistics(self, 'c3')
-        chainer.report(paramstats)
-        paramstats = monitor.weight_gradient_statistics(self, 'c1')
-        chainer.report(paramstats)
-        paramstats = monitor.weight_gradient_statistics(self, 'c2')
-        chainer.report(paramstats)
-        paramstats = monitor.weight_gradient_statistics(self, 'c3')
-        chainer.report(paramstats)
-        paramstats = monitor.bias_gradient_statistics(self, 'c1')
-        chainer.report(paramstats)
-        paramstats = monitor.bias_gradient_statistics(self, 'c2')
-        chainer.report(paramstats)
-        paramstats = monitor.bias_gradient_statistics(self, 'c3')
-        chainer.report(paramstats)
-        """
-        paramstats = monitor.sparsity(self, include_bias=True)
-        chainer.report(paramstats)
-        """
+        # To aggregate statistics over all layers, skip the layer argument
+        # paramstats = monitor.weight_statistics(self)
+        # chainer.report(paramstats)
 
-        """
-        observations = monitor.get_params(self)
-        chainer.report(observations)
+        for layer in self.monitored_layers:
+            stats = monitor.weight_statistics(self, layer)
+            chainer.report(stats)
 
-        grads = monitor.get_grads(self)
-        chainer.report(grads)
+            stats = monitor.bias_statistics(self, layer)
+            chainer.report(stats)
 
-        zeros = monitor.get_sparsity(self)
-        chainer.report(zeros)
-        """
+            stats = monitor.weight_gradient_statistics(self, layer)
+            chainer.report(stats)
+
+            stats = monitor.bias_gradient_statistics(self, layer)
+            chainer.report(stats)
+

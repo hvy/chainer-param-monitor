@@ -1,6 +1,6 @@
-# Parameter Monitoring for Chainer
+# Neural Network Monitoring for Chainer Models
 
-Statistics for weights, biases, gradiends can be computed during training with this Chainer plugin. You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat this for every iteration or epoch, saving them to a log using e.g. [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes over the course of training later on.
+Chainer plugin for computing statistics for weights, biases, gradiends during training. You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat it for each iteration or epoch, saving them to a log using e.g. [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes over the course of training later on.
 
 *Note: It is not yet optimized for speed. Computing percentiles is for instance slow.*
 
@@ -22,6 +22,10 @@ Statistics for weights, biases, gradiends can be computed during training with t
 - Gradients
 
 For a **specific layer** or an aggregation over the **entire model**.
+
+## Dependencies
+
+Chainer 1.18.0 (including NumPy 1.11.2)
 
 ## Example
 

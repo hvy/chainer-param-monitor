@@ -1,14 +1,10 @@
 # Parameter Monitoring for Chainer
 
-Statistics for weights, biases, gradiends can be computed during training with this Chainer utility. You can fetch statistics from any chainer model (**chainer.Chainer**) and repeat this for each iteration of epoch and save them to a log (e.g. using [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes for a neural network during over the course of training.
-
-## Targets
-
-- Weight
-- Biases
-- Gradients
+Statistics for weights, biases, gradiends can be computed during training with this Chainer utility. You can fetch statistics from any chainer model [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat this for every iteration or epoch, saving them to a log (e.g. using [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html)) to plot the statistical changes for a neural network over the course of training.
 
 ## Statistics
+
+### Data
 
 - Mean
 - Standard deviation
@@ -17,18 +13,26 @@ Statistics for weights, biases, gradiends can be computed during training with t
 - Percentiles
 - Sparseness
 
-## Layers
+### Targets
 
-Specify a specific layer by name or aggregate over all layers.
+- Weight
+- Biases
+- Gradients
 
-### Sample
+## Granularity
+
+- Either a specific layer or an aggregation over the entire model.
+
+*Note: It is not yet optimized for speed. Computing percentiles is for instance slow.*
+
+## Example
 
 Weights and biases when training a small convolutional neural network for classification for 100 epochs aggregated over all layers (including final fully connected linear layers). The different alphas show different percentiles.
 
-#### Weights
+### Weights
 
 <img src="./samples/weights.png" width="512px;"/>
 
-#### Biases
+### Biases
 
 <img src="./samples/biases.png" width="512px;"/>

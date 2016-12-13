@@ -1,6 +1,8 @@
 # Parameter Monitoring for Chainer
 
-Statistics for weights, biases, gradiends can be computed during training with this Chainer plugin. You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat this for every iteration or epoch, saving them to a log using e.g. [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes over the course of training.
+Statistics for weights, biases, gradiends can be computed during training with this Chainer plugin. You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat this for every iteration or epoch, saving them to a log using e.g. [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes over the course of training later on.
+
+*Note: It is not yet optimized for speed. Computing percentiles is for instance slow.*
 
 ## Statistics
 
@@ -11,19 +13,15 @@ Statistics for weights, biases, gradiends can be computed during training with t
 - Min
 - Max
 - Percentiles
-- Sparseness
+- Sparsity (actually just counting number of zeros)
 
 ### Targets
 
-- Weight
+- Weights
 - Biases
 - Gradients
 
-## Granularity
-
-- Either a specific layer or an aggregation over the entire model.
-
-*Note: It is not yet optimized for speed. Computing percentiles is for instance slow.*
+For a **specific layer** or an aggregation over the **entire model**.
 
 ## Example
 

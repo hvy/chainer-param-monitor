@@ -1,8 +1,8 @@
 # Neural Network Monitoring for Chainer Models
 
-This is a Chainer plugin for computing statistics for weights, biases, gradiends during training.
+This is a Chainer plugin for computing statistics over weights, biases and gradients during training.
 
-You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat it for each iteration or epoch, saving them to a log using e.g. [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes over the course of training later on.
+You can collect the above mentioned data from any [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat it for each iteration or epoch, saving them to a log using e.g. [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes over the course of training later on.
 
 *Note: It is not yet optimized for speed. Computing percentiles is for instance slow.*
 
@@ -10,7 +10,7 @@ You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/s
 
 <img src="./samples/conv_layers.png" width="1024px;"/>
 
-*An example plot of weight, bias and gradient statistics from different convolutional layers collected using this plugin.*
+*An example plot of weights, biases and gradients from different convolutional layers collected using this plugin.*
 
 ### Data
 
@@ -27,9 +27,9 @@ You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/s
 - Biases
 - Gradients
 
-For a **specific layer** or an aggregation over the **entire model**.
+For a **specific layer** or the aggregated data over the **entire model**.
 
-## Dependencies
+### Dependencies
 
 Chainer 1.18.0 (including NumPy 1.11.2)
 
@@ -38,15 +38,20 @@ Chainer 1.18.0 (including NumPy 1.11.2)
 ### Usage
 
 ```python
+# This is simplified code, see the 'example' directory for a working example.
 import monitor
 
-# Assumes you've written Chainer code before
+# Prepare the model
 model = MLP()
 optimizer.setup(model)
+
+# Forward computation, back propagation a parameter update.
+# The gradients are still stored inside each parameter after those steps.
 loss = model(x, t)
 loss.backward()
 optimizer.update()
 
+# Use the plugin to collect data and tell Chainer to include it in the log.
 weight_report = monitor.weight_statistics(model)
 chainer.report(weight_report) # Mean, std, min, max, percentiles
 

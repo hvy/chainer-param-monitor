@@ -8,6 +8,10 @@ You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/s
 
 ## Statistics
 
+<img src="./samples/conv_layers.png" width="1024px;"/>
+
+*An example plot of weight, bias and gradient statistics from different convolutional layers collected using this plugin.*
+
 ### Data
 
 - Mean
@@ -58,16 +62,12 @@ chainer.report(zeros)
 
 ### Plotting the Statistics
 
-Weights and biases when training a small convolutional neural network for classification for 100 epochs.
+Weights and biases when training a small convolutional neural network for classification for 100 epochs aggregated over all layers (including final fully connected linear layers). The different alphas show different percentiles.
 
-#### Aggregated Weights and Biases
-
-Aggregated over all layers (including final fully connected linear layers). The different alphas show different percentiles.
+#### Weights
 
 <img src="./samples/weights.png" width="512px;"/>
 
+#### Biases
+
 <img src="./samples/biases.png" width="512px;"/>
-
-#### Per-Layer Parameters and Gradients
-
-<img src="./samples/conv_layers.png" width="1024px;"/>

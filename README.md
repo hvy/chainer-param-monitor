@@ -41,17 +41,17 @@ Chainer 1.18.0 (including NumPy 1.11.2)
 # This is simplified code, see the 'example' directory for a working example.
 import monitor
 
-# Prepare the model
+# Prepare the model.
 model = MLP()
 optimizer.setup(model)
 
-# Forward computation, back propagation a parameter update.
+# Forward computation, back propagation and a parameter update.
 # The gradients are still stored inside each parameter after those steps.
 loss = model(x, t)
 loss.backward()
 optimizer.update()
 
-# Use the plugin to collect data and tell Chainer to include it in the log.
+# Use the plugin to collect data and nicely ask Chainer to include it in the log.
 weight_report = monitor.weight_statistics(model)
 chainer.report(weight_report) # Mean, std, min, max, percentiles
 

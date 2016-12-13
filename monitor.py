@@ -4,7 +4,7 @@ from chainer.cuda import cupy
 
 """
 A collection of functions that extract statistics for given models such as
-instances of chainer.Chain in an dictionary.
+instances of chainer.Chain and return dictionaries.
 """
 
 # The name template of the statistic to collect and include in the report.
@@ -61,7 +61,7 @@ def layers_params(model, param_name, attr_name):
     params = xp.array([], dtype=xp.float32)
 
     for param in model.params():
-        if param.name == param_name:  # 'W' or 'b'
+        if param.name == param_name:
             values = getattr(param, attr_name)
             values = values.flatten()
             params = xp.concatenate((params, values))  # Slow?
@@ -96,7 +96,7 @@ def as_statistics(data, model_name, param_name, attr_name, *, layer_name=None,
                                   statistic=m)
         stats[key] = getattr(data, m)()
 
-    if measure_percentiles:
+    if measure_percentiles:  # TODO: Make percentile computation faster for GPUs
         # To CPU before computing the percentiles
         if cupy.get_array_module(data) is cupy:
             data = cupy.asnumpy(data)

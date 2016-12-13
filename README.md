@@ -1,6 +1,8 @@
 # Neural Network Monitoring for Chainer Models
 
-Chainer plugin for computing statistics for weights, biases, gradiends during training. You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat it for each iteration or epoch, saving them to a log using e.g. [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes over the course of training later on.
+This is a Chainer plugin for computing statistics for weights, biases, gradiends during training.
+
+You can collect statistics from any [chainer.Chain](http://docs.chainer.org/en/stable/reference/core/link.html) and repeat it for each iteration or epoch, saving them to a log using e.g. [chainer.report()](http://docs.chainer.org/en/stable/reference/util/reporter.html) to plot the statistical changes over the course of training later on.
 
 *Note: It is not yet optimized for speed. Computing percentiles is for instance slow.*
 
@@ -56,12 +58,16 @@ chainer.report(zeros)
 
 ### Plotting the Statistics
 
-Weights and biases when training a small convolutional neural network for classification for 100 epochs aggregated over all layers (including final fully connected linear layers). The different alphas show different percentiles.
+Weights and biases when training a small convolutional neural network for classification for 100 epochs.
 
-#### Weights
+#### Aggregated Weights and Biases
+
+Aggregated over all layers (including final fully connected linear layers). The different alphas show different percentiles.
 
 <img src="./samples/weights.png" width="512px;"/>
 
-#### Biases
-
 <img src="./samples/biases.png" width="512px;"/>
+
+#### Per-Layer Parameters and Gradients
+
+<img src="./samples/conv_layers.png" width="1024px;"/>

@@ -69,7 +69,7 @@ def plot_percentile_log(filename, log, layer_names, color='green', dpi=100):
             z_key = key_template.format(layer=layer_names[row],
                     statistic='percentile/z')
             z = log[z_key]
-            plt.plot(range(len(z)), z, color=color, alpha=0.2)
+            ax.plot(range(len(z)), z, color=color, alpha=0.2)
 
             # Min, Max
             pmin_key = key_template.format(layer=layer_names[row],

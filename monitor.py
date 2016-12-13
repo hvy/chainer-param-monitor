@@ -1,72 +1,119 @@
 import numpy as np
 from functools import reduce
-import chainer
+from chainer.cuda import cupy
 
 """
 A collection of functions that extract statistics for given models such as
 instances of chainer.Chain in an dictionary.
 """
 
-def get_params(model, param_names=('W', 'b')):
-    """Return all parameters (weights and biases) for the given model."""
-    params = _flattened_params(model, attr='data')
-    report = _as_report(params, prefix=model.name, xp=model.xp)
-    return report
+# The name template of the statistic to collect and include in the report.
+# E.g. 'predictor/conv1/W/grad/percentile/sigma_one'
+key_template = '{model}/{layer}/{param}/{attr}/{statistic}'
 
 
-def get_grads(model):
-    """Return all currently stored gradient of the model."""
-    grads = _flattened_params(model, attr='grad')
-    report = _as_report(grads, prefix=model.name + '/grad', xp=model.xp)
-    return report
+def weight_statistics(model, layer_name=None):
+    return parameter_statistics(model, 'W', 'data', layer_name)
 
 
-def get_sparsity(model, param_names=('W', 'b')):
-    """Return number of zeros for the given model. """
-    def _count_zeros(memo, param):
-        if param.name in param_names:
-            memo[param.name] += param.data.size - \
-                    model.xp.count_nonzero(param.data)
-        return memo
-
-    n_zeros = reduce(_count_zeros, model.params(),
-                     {pn: 0 for pn in param_names})
-    report = {'{}/{}/n_zeros/'.format(model.name, pn): n_zeros[pn] \
-              for pn in param_names}
-
-    return report
+def bias_statistics(model, layer_name=None):
+    return parameter_statistics(model, 'b', 'data', layer_name)
 
 
-def _flattened_params(model, param_names=('W', 'b'), attr='data'):
-    def _append(memo, param):
-        if param.name in param_names:
-            # Flatten before appending so that we can concatenate everything
-            memo[param.name].append(getattr(param, attr).flatten())
-        return memo
+def weight_gradient_statistics(model, layer_name=None):
+    return parameter_statistics(model, 'W', 'grad', layer_name)
 
-    params = reduce(_append, model.params(), {lp: [] for lp in param_names})
-    params = {param_name: model.xp.concatenate(param) \
-              for (param_name, param) in params.items()}
+
+def bias_gradient_statistics(model, layer_name=None):
+    return parameter_statistics(model, 'b', 'grad', layer_name)
+
+
+def sparsity(model, include_bias=False, layer_name=None):
+    xp = model.xp
+
+    def reduce_count_zeros(acc, param):
+        if param.name == 'W' or (include_bias and param.name == 'b'):
+            acc += param.data.size - xp.count_nonzero(param.data)
+        return acc
+
+    if layer_name is not None:
+        sparsity = reduce(reduce_count_zeros, [getattr(model, layer_name)], 0)
+    else:
+        sparsity = reduce(reduce_count_zeros, model.params(), 0)
+
+    key = key_template.format(model=model.name,
+                              layer='*' if layer_name is None else layer_name,
+                              param='Wb' if include_bias else 'W' ,
+                              attr='sparsity',
+                              statistic='zeros')
+
+    return { key: sparsity }
+
+
+def layer_params(layer, param_name, attr_name):
+    params = getattr(layer, param_name)
+    params = getattr(params, attr_name)
+    return params.flatten()
+
+
+def layers_params(model, param_name, attr_name):
+    xp = model.xp
+    params = xp.array([], dtype=xp.float32)
+
+    for param in model.params():
+        if param.name == param_name:  # 'W' or 'b'
+            values = getattr(param, attr_name)
+            values = values.flatten()
+            params = xp.concatenate((params, values))  # Slow?
 
     return params
 
 
-def _as_report(data, prefix='', xp=np):
+def parameter_statistics(model, param_name, attr_name, layer_name=None):
+    if layer_name is not None:  # Collect statistics for a single layer only
+        l = getattr(model, layer_name)
+        lp = layer_params(l, param_name, attr_name)
+        return as_statistics(lp, model.name, param_name, attr_name,
+                             layer_name=layer_name)
+
+    lp = layers_params(model, param_name, attr_name)
+    return as_statistics(lp, model.name, param_name, attr_name)
+
+
+def as_statistics(data, model_name, param_name, attr_name, *, layer_name=None,
+                  measures=['min', 'max', 'mean', 'std'],
+                  measure_percentiles=True):
     stats = {}
-    for name in ['W', 'b']:
-        d = data[name]
-        stats['{}/{}/min'.format(prefix, name)] = d.min()
-        stats['{}/{}/max'.format(prefix, name)] = d.max()
-        stats['{}/{}/mean'.format(prefix, name)] = d.mean()
-        stats['{}/{}/std'.format(prefix, name)] = d.std()
 
-        if xp is chainer.cuda.cupy:
-            d = xp.asnumpy(d)
+    if layer_name is None:
+        layer_name = '*'
 
-        percentiles = np.percentile(d, (0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87))
-        percentiles = chainer.cuda.cupy.asarray(percentiles)
+    for m in measures:
+        key = key_template.format(model=model_name,
+                                  layer=layer_name,
+                                  param=param_name,
+                                  attr=attr_name,
+                                  statistic=m)
+        stats[key] = getattr(data, m)()
+
+    if measure_percentiles:
+        # To CPU before computing the percentiles
+        if cupy.get_array_module(data) is cupy:
+            data = cupy.asnumpy(data)
+
+        percentiles = np.percentile(data,
+                (0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87))
+
+        # Back to GPU when percentiles are computed
+        if cupy.get_array_module(data) is cupy:
+            percentiles = cupy.asarray(percentiles)
 
         for i, p in enumerate(['n3s', 'n2s', 'n1s', 'z', '1s', '2s', '3s']):
-            stats['{}/{}/percentile/{}'.format(prefix, name, p)] = percentiles[i]
+            key = key_template.format(model=model_name,
+                                      layer=layer_name,
+                                      param=param_name,
+                                      attr=attr_name,
+                                      statistic='percentile/{}'.format(p))
+            stats[key] = percentiles[i]
 
     return stats

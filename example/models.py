@@ -12,24 +12,24 @@ import monitor
 class CNN(chainer.Chain):
     def __init__(self):
         super().__init__(
-            c1=L.Convolution2D(1, 32, 4, stride=2, pad=1),
-            c2=L.Convolution2D(32, 64, 4, stride=2, pad=1),
-            c3=L.Convolution2D(64, 128, 4, stride=2, pad=1),
-            l1=L.Linear(None, 1024),
-            l2=L.Linear(None, 10)
+            conv1=L.Convolution2D(1, 32, 4, stride=2, pad=1),
+            conv2=L.Convolution2D(32, 64, 4, stride=2, pad=1),
+            conv3=L.Convolution2D(64, 128, 4, stride=2, pad=1),
+            fc1=L.Linear(None, 1024),
+            fc2=L.Linear(1024, 10)
         )
-        self.monitored_layers = ['c1', 'c2', 'c3']
+        self.monitored_layers = ['conv1', 'conv2', 'conv3', 'fc1', 'fc2']
 
     def __call__(self, x):
         # Collect and report the statistics from the previous call before
         # proceeding with this forward propagation.
         self.report()
 
-        h = self.c1(x)
-        h = self.c2(h)
-        h = self.c3(h)
-        h = self.l1(h)
-        h = self.l2(h)
+        h = self.conv1(x)
+        h = self.conv2(h)
+        h = self.conv3(h)
+        h = self.fc1(h)
+        h = self.fc2(h)
         return h
 
     def report(self):

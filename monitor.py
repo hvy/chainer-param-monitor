@@ -51,6 +51,8 @@ def sparsity(model, include_bias=False, layer_name=None):
 
 
 def layer_params(layer, param_name, attr_name):
+    if not hasattr(layer, param_name):
+        return layer.xp.array([])
     params = getattr(layer, param_name)
     params = getattr(params, attr_name)
     return params.flatten()
@@ -94,15 +96,28 @@ def as_statistics(data, model_name, param_name, attr_name, *, layer_name=None,
                                   param=param_name,
                                   attr=attr_name,
                                   statistic=m)
-        stats[key] = getattr(data, m)()
+        try:
+            stats[key] = getattr(data, m)()
+        except ValueError:
+            # If data is invalid, e.g. for uninitialized linear links,
+            # chainer.links.Linear
+            stats[key] = float('NaN')
+
 
     if measure_percentiles:  # TODO: Make percentile computation faster for GPUs
-        # To CPU before computing the percentiles
+        # To CPU before computing the percentiles since CuPy doesn't implement
+        # np.percentile()
         if cupy.get_array_module(data) is cupy:
             data = cupy.asnumpy(data)
 
-        percentiles = np.percentile(data,
-                (0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87))
+        try:
+            percentiles = np.percentile(data,
+                    (0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87))
+        except IndexError:
+            # If data is missing from uninitialized parameters, add
+            # NaN placeholders instead of skipping the measurements completely
+            # or registering zeros
+            percentiles = np.array((float('NaN'),) * 7)
 
         # Back to GPU when percentiles are computed
         if cupy.get_array_module(data) is cupy:

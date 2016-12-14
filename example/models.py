@@ -50,3 +50,5 @@ class CNN(chainer.Chain):
             stats = monitor.bias_gradient_statistics(self, layer)
             chainer.report(stats)
 
+            stats = monitor.sparsity(self, layer)
+            chainer.report(stats)

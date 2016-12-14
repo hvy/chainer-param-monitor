@@ -8,9 +8,9 @@ You can collect the above mentioned data from any [chainer.Chain](http://docs.ch
 
 ## Statistics
 
-<img src="./samples/conv_layers.png" width="1024px;"/>
+<img src="./samples/cnn.png" width="1024px;"/>
 
-*An example plot of weights, biases and gradients from different convolutional layers collected using this plugin.*
+*An example plot of weights, biases and gradients from different convolutional and fully connected layers.*
 
 ### Data
 

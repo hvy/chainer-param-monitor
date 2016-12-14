@@ -10,7 +10,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--log', type=str, default='result/log')
     parser.add_argument('--out', type=str, default='result/log.png')
-    parser.add_argument('--layers', nargs='+', type=str, default=['c1', 'c2', 'c3'])
+    parser.add_argument('--layers', nargs='+', type=str,
+                        default=['conv1', 'conv2', 'conv3', 'fc1', 'fc2'])
     return parser.parse_args()
 
 

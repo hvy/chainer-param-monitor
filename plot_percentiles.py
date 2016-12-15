@@ -46,8 +46,10 @@ def plot_percentile_log(filename, log, layer_names, color='green', dpi=100):
 
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(1024*n_cols/dpi, 1024*n_rows/dpi), dpi=dpi)
 
-    if axes.ndim == 1:
+    if n_rows == 1:
         axes = axes.reshape(1, -1)
+    elif n_cols == 1:
+        axes = axes.reshape(-1, 1)
 
     for row in range(n_rows):
         for col in range(n_cols):

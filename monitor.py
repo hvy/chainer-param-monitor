@@ -8,6 +8,7 @@ key_template = '{model}/{layer}/{param}/{attr}/{statistic}'
 
 
 def _percentiles(data, sigma=(0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87)):
+
     """Compute percentiles for data and return an array with the same length
     as the number of elements in ``sigma``.
 
@@ -19,6 +20,7 @@ def _percentiles(data, sigma=(0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87)):
     Returns:
         array: Array of percentiles.
     """
+
     # TODO: Make percentile computation faster for GPUs.
 
     # To CPU before computing the percentiles since CuPy doesn't implement
@@ -42,6 +44,7 @@ def _percentiles(data, sigma=(0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87)):
 
 
 def layer_params(layer, param_name, attr_name):
+
     """Return parameters in a flattened array from the given layer or an empty
     array if the parameters are not found.
 
@@ -53,6 +56,7 @@ def layer_params(layer, param_name, attr_name):
     Returns:
         array: Flattened array of parameters.
     """
+
     if isinstance(layer, chainer.Chain):
         # Nested chainer.Chain, aggregate all underlying statistics
         return layers_params(layer, param_name, attr_name)
@@ -65,6 +69,7 @@ def layer_params(layer, param_name, attr_name):
 
 
 def layers_params(model, param_name, attr_name):
+
     """Return all parameters in a flattened array from the given model.
 
     Args:
@@ -75,6 +80,7 @@ def layers_params(model, param_name, attr_name):
     Returns:
         array: Flattened array of parameters.
     """
+
     xp = model.xp
     params = xp.array([], dtype=xp.float32)
 
@@ -88,6 +94,7 @@ def layers_params(model, param_name, attr_name):
 
 
 def weight_statistics(model, layer_name=None):
+
     """Collect weight statistict from the given model and return it as a
     ``dict``.
 
@@ -99,10 +106,12 @@ def weight_statistics(model, layer_name=None):
     Returns:
         dict: Parameter statistics.
     """
+
     return parameter_statistics(model, 'W', 'data', layer_name)
 
 
 def bias_statistics(model, layer_name=None):
+
     """Collect bias statistict from the given model and return it as a
     ``dict``.
 
@@ -114,10 +123,12 @@ def bias_statistics(model, layer_name=None):
     Returns:
         dict: Parameter statistics.
     """
+
     return parameter_statistics(model, 'b', 'data', layer_name)
 
 
 def weight_gradient_statistics(model, layer_name=None):
+
     """Collect weight gradient statistict from the given model and return it
     as a ``dict``.
 
@@ -129,10 +140,12 @@ def weight_gradient_statistics(model, layer_name=None):
     Returns:
         dict: Parameter statistics.
     """
+
     return parameter_statistics(model, 'W', 'grad', layer_name)
 
 
 def bias_gradient_statistics(model, layer_name=None):
+
     """Collect bias gradient statistict from the given model and return it
     as a ``dict``.
 
@@ -144,10 +157,12 @@ def bias_gradient_statistics(model, layer_name=None):
     Returns:
         dict: Parameter statistics.
     """
+
     return parameter_statistics(model, 'b', 'grad', layer_name)
 
 
 def sparsity(model, include_bias=False, layer_name=None):
+
     """Count the number of parameters with the value zero for the given model
     and return it as a ``dict``.
 
@@ -161,6 +176,7 @@ def sparsity(model, include_bias=False, layer_name=None):
     Returns:
         dict: Parameter statistics.
     """
+
     xp = model.xp
 
     def reduce_count_zeros(acc, param):
@@ -183,6 +199,7 @@ def sparsity(model, include_bias=False, layer_name=None):
 
 
 def parameter_statistics(model, param_name, attr_name, layer_name=None):
+
     """Collect statistict from the given model and return it as a ``dict``.
 
     The returned ``dict`` contains a key for each metric, mapping to a NumPy
@@ -199,6 +216,7 @@ def parameter_statistics(model, param_name, attr_name, layer_name=None):
     Returns:
         dict: Parameter statistics.
     """
+
     if layer_name is not None:  # Collect statistics for a single layer only
         l = getattr(model, layer_name)
         lp = layer_params(l, param_name, attr_name)
@@ -211,6 +229,7 @@ def parameter_statistics(model, param_name, attr_name, layer_name=None):
 
 def as_statistics(data, model_name, param_name, attr_name, *, layer_name=None,
                   statistics=('min', 'max', 'mean', 'std', 'percentiles')):
+
     """Compute statistics based on the given data and return it as a ``dict``.
 
     Args:
@@ -225,6 +244,7 @@ def as_statistics(data, model_name, param_name, attr_name, *, layer_name=None,
     Returns:
         dict: Parameter statistics.
     """
+
     stats = {}
 
     if layer_name is None:

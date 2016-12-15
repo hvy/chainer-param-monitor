@@ -8,8 +8,8 @@ key_template = '{model}/{layer}/{param}/{attr}/{statistic}'
 
 
 def _percentiles(data, sigma=(0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87)):
-    """Compute the percentiles from the date and return an array with the same
-    length as the number of elements in ``sigma``.
+    """Compute percentiles for data and return an array with the same length
+    as the number of elements in ``sigma``.
 
     Args:
         data (array): 1-dimensional NumPy or CuPy arryay.
@@ -19,9 +19,10 @@ def _percentiles(data, sigma=(0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87)):
     Returns:
         array: Array of percentiles.
     """
-    # TODO: Make percentile computation faster for GPUs
+    # TODO: Make percentile computation faster for GPUs.
+
     # To CPU before computing the percentiles since CuPy doesn't implement
-    # np.percentile()
+    # np.percentile().
     if cupy.get_array_module(data) is cupy:
         data = cupy.asnumpy(data)
 
@@ -30,10 +31,10 @@ def _percentiles(data, sigma=(0.13, 2.28, 15.87, 50, 84.13, 97.72, 99.87)):
     except IndexError:
         # If data is missing from uninitialized parameters, add
         # NaN placeholders instead of skipping the measurements completely
-        # or registering zeros
+        # or registering zeros.
         ps = np.array((float('NaN'),) * 7)
 
-    # Back to GPU when percentiles are computed
+    # Back to GPU when percentiles are computed.
     if cupy.get_array_module(data) is cupy:
         ps = cupy.asarray(percentiles)
 
@@ -52,7 +53,10 @@ def layer_params(layer, param_name, attr_name):
     Returns:
         array: Flattened array of parameters.
     """
-    if not hasattr(layer, param_name):
+    if isinstance(layer, chainer.Chain):
+        # Nested chainer.Chain, aggregate all underlying statistics
+        return layers_params(layer, param_name, attr_name)
+    elif not hasattr(layer, param_name):
         return layer.xp.array([])
 
     params = getattr(layer, param_name)
@@ -181,8 +185,8 @@ def sparsity(model, include_bias=False, layer_name=None):
 def parameter_statistics(model, param_name, attr_name, layer_name=None):
     """Collect statistict from the given model and return it as a ``dict``.
 
-    The returned ``dict`` contains a key for each metric mapping to  a NumPy
-    or CuPy ``float32`` value depending on if the given model is in the CPU or
+    The returned ``dict`` contains a key for each metric, mapping to a NumPy
+    or CuPy ``float32`` value depending on if the given model was on the CPU or
     the GPU.
 
     Args:

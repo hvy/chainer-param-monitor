@@ -1,6 +1,8 @@
 import numpy as np
 from functools import reduce
-from chainer.cuda import cupy
+import cupy
+import chainer
+
 
 # The name template of the statistic to collect and include in the report.
 # E.g. 'predictor/conv1/W/grad/percentile/sigma_one'

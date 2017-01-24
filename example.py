@@ -1,10 +1,11 @@
 import argparse
+import chainer
 from chainer import links as L
 from chainer import functions as F
 from chainer import Chain, cuda, datasets, iterators, training, optimizers
 from chainer.training import extensions
 
-from extensions import LinkMonitor
+# from extensions import ParameterStatistics
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -42,6 +43,7 @@ def main(args):
     cnn = CNN()
     links = list(cnn.links(skipself=True))
     model = L.Classifier(cnn)
+    model.name = 'model'
 
     if args.gpu >= 0:
         cuda.check_cuda_available()
@@ -50,19 +52,24 @@ def main(args):
 
     optimizer = optimizers.Adam()
     optimizer.setup(model)
+    # optimizer.add_hook(chainer.optimizer.Lasso(1))
 
     updater = training.StandardUpdater(train_iter, optimizer, device=args.gpu)
 
     trainer = training.Trainer(updater, (args.epochs, 'epoch'))
     trainer.extend(extensions.ProgressBar())
     trainer.extend(extensions.Evaluator(test_iter, model, device=args.gpu))
-    trainer.extend(extensions.LogReport(trigger=(1, 'epoch')))  # Default log report
+    # trainer.extend(extensions.LogReport(keys=('model/W/data/percentile/3'), trigger=(1, 'epoch')))  # Default log report
+    # trainer.extend(extensions.LogReport(trigger=(1, 'epoch')))  # Default log report
+    trainer.extend(extensions.LogReport(), trigger=(1, 'epoch'))  # Default log report
+    """
     trainer.extend(extensions.PrintReport(['epoch', 'main/loss',
                                            'main/accuracy',
                                            'validation/main/loss',
-                                           'validation/main/accuracy']))
+                                           'validation/main/accuracy', 'model/b/grad/percentile/1']))
+    """
 
-    trainer.extend(LinkMonitor(links), trigger=(1, 'epoch'))
+    trainer.extend(extensions.ParameterStatistics(list(cnn.links()), trigger=(1, 'epoch')), trigger=(1, 'epoch'))
     # trainer.extend(LinkMonitor(cnn), trigger=(1, 'epoch'))
     trainer.run()
 

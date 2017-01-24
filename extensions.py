@@ -66,9 +66,11 @@ class ParameterStatistics(extension.Extension):
     def __call__(self, trainer):
 
         """Execute the extension and collect statistics for the current state
-        of parameters. The statistics will be aggregated but averaged before
-        being reported. The timing of the reporting is specified by the trigger
-        in the constructor.
+        of parameters.
+
+        Note that this method will merely update its statistic summary, unless
+        the internal trigger is fired. If the trigger is fired, the summary
+        will also be reported and then reset for the next accumulation.
 
         Args:
             trainer (~chainer.training.Trainer): Associated trainer that

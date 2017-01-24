@@ -29,14 +29,10 @@ class ParameterStatistics(extension.Extension):
 
     Args:
         links (~chainer.Link or iterable of ~chainer.Link): Links containing
-            the parameters to monitor. The link is expected to have a ``name``
+            the parameters to observe. The link is expected to have a ``name``
             attribute which is used as a part of a key in the report.
         trigger: Trigger that decides when to aggregate the results and report
             the values.
-        monitor_targets (iterable): Iterable of tuples ``(param, attr)`` where
-            ``param`` is ``W`` for weights or ``b`` for biases. ``attr`` may be
-            ``data`` or ``grad``. These values may however vary depending on
-            the type of ``links``.
         sparsity (bool): If ``True``, include sparsity statistics.
         sparsity_include_bias (bool): If ``True``, take biases into account
             when computing the sparsity statistics. Otherwise, only consider
@@ -47,21 +43,25 @@ class ParameterStatistics(extension.Extension):
     default_name = 'parameter_statistics'
     priority = extension.PRIORITY_WRITER
 
-    def __init__(self, links, trigger=(1, 'epoch'),
-                 monitor_targets=(('W', 'data'), ('b', 'data'),
-                                  ('W', 'grad'), ('b', 'grad')),
-                 sparsity=True, sparsity_include_bias=True, prefix=None):
+    def __init__(self, links, trigger=(1, 'epoch'), sparsity=True,
+                 sparsity_include_bias=True, prefix=None):
 
         if not isinstance(links, (tuple, list)):
             links = links,
 
         self._links = links
         self._trigger = training.trigger.get_trigger(trigger)
-        self._monitor_targets = monitor_targets
-        self._sparsity = sparsity
-        self._sparsity_include_bias=sparsity_include_bias
         self._prefix = prefix
         self._summary = reporter.DictSummary()
+        self._targets = [('W', 'data'), ('b', 'data'),
+                         ('W', 'grad'), ('b', 'grad')]
+        self._sparsity_targets = []
+
+        if sparsity:
+            if sparsity_include_bias:
+                self._sparsity_targets.append((('W', 'b'), 'data'))
+            else:
+                self._sparsity_targets.append((('W'), 'data'))
 
     def __call__(self, trainer):
 
@@ -78,28 +78,27 @@ class ParameterStatistics(extension.Extension):
         """
 
         for link in self._links:
-            for targets in self._monitor_targets:
-                stats = self.get_statistics(link, *targets)
+            for target in self._targets:
+                stats = self.get_statistics(link, *target)
                 stats = self.post_process(stats)
                 self._summary.add(stats)
-            if self._sparsity:
-                stats = self.get_sparsity(link)
+
+            for target in self._sparsity_targets:
+                stats = self.get_sparsity(link, *target)
                 stats = self.post_process(stats)
                 self._summary.add(stats)
 
         if self._trigger(trainer):
             reporter.report(self._summary.compute_mean())
-            self._summary = reporter.DictSummary()
+            self._summary = reporter.DictSummary()  # Clear summary
 
     def post_process(self, stats):
         if self._prefix is not None:
             prefix_statistic_keys(self._prefix, stats)
         return stats
 
-    def get_statistics(self, link, param_name, attr_name):
-        return statistics.get_statistics(link, param_name, attr_name)
+    def get_statistics(self, link, param_names, attr_names):
+        return statistics.get_statistics(link, param_names, attr_names)
 
-    def get_sparsity(self, link):
-        param_names = ('W', 'b') if self._sparsity_include_bias else 'W'
-        attr_names = 'data'
+    def get_sparsity(self, link, param_names, attr_names):
         return statistics.get_sparsity(link, param_names, attr_names)

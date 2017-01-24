@@ -3,20 +3,55 @@ import cupy
 from functools import reduce
 
 
-# Statistic dictionaries will consist of items with the following key format.
-key_template = '{link_name}/{param_name}/{attr_name}'
+def _iterable(x):
+    if isinstance(x, (list, tuple)):
+        return x
+    return x,
 
 
-def get_statistics(link, param_name, attr_name,
+def _key_base(link, param_names, attr_names):
+
+    """Create a statistic dictionary key."""
+
+    link_name = 'None' if not hasattr(link, 'name') else link.name
+    param_name = '-'.join(param_names)
+    attr_name = '-'.join(attr_names)
+
+    return '{}/{}/{}'.format(link_name, param_name, attr_name)
+
+
+def get_statistics(link, param_names, attr_names,
                    statistics=('min', 'max', 'mean', 'std'),
                    percentile_sigmas=(0.13, 2.28, 15.87, 50, 84.13, 97.72,
                                       99.87)):
 
-    key_base = key_template.format(link_name=link.name,
-                                   param_name=param_name,
-                                   attr_name=attr_name)
+    """Compute the percentiles and various statistics for a link.
 
-    params = flatten_link(link, (param_name,), (attr_name,))
+    Specified parameters and attributes in the given link will be flattened and
+    statistics will be computed before being returned in a dictionary.
+
+    Args:
+        link (~chainer.Link): Link for which statistics are computed.
+        param_names (str or iterable): Parameter names, e.g. ``('W', 'b')``
+            or ``'W'``.
+        attr_names (str or iterable): Attributes names, e.g.
+            ``('data', 'grad')`` or ``'data'``.
+        statistics (iterable): Statistics to collect, mapping directly to NumPy
+            and CuPy functions.
+        percentile_sigmas (iterable): Sigma values for which percentiles are
+            computed.
+
+    Returns:
+        dict: Dictionary of statistics.
+    """
+
+    param_names = _iterable(param_names)
+    attr_names = _iterable(attr_names)
+
+    params = flatten_link(link, param_names, attr_names)
+
+    key_base = _key_base(link, param_names, attr_names)
+
     stats = {}
 
     if percentile_sigmas:
@@ -36,15 +71,34 @@ def get_statistics(link, param_name, attr_name,
     return stats
 
 
-def get_sparsity(link, include_bias=False):
+def get_sparsity(link, param_names, attr_names):
 
-    param_names = ('W', 'b') if include_bias else ('W',)
-    params = flatten_link(link, param_names, ('data',))
+    """Compute the number of zero elements in a link.
+
+    Only specified parameters and attributes are taken into account. It is for
+    instance possible to ignore the biases and only count the number of zero
+    elements among the weights by setting ``param_names`` to ``'W'``.
+
+    Args:
+        link (~chainer.Link): Link for which sparsity is computed.
+        param_names (str or iterable): Parameter names, e.g. ``('W', 'b')``
+            or ``'W'``.
+        attr_names (str or iterable): Attributes names, e.g.
+            ``('data', 'grad')`` or ``'data'``.
+
+    Returns:
+        dict: Dictionary of statistics.
+    """
+
+    param_names = _iterable(param_names)
+    attr_names = _iterable(attr_names)
+
+    params = flatten_link(link, param_names, attr_names)
+
     n_zeros = params.size - link.xp.count_nonzero(params)
 
-    key = key_template.format(link_name=link.name,
-                              param_name='Wb' if include_bias else 'W',
-                              attr_name='zeros')
+    key_base = _key_base(link, param_names, attr_names)
+    key = '{}/zeros'.format(key_base)
 
     return { key: n_zeros }
 
@@ -56,10 +110,11 @@ def flatten_link(link, param_names, attr_names):
 
     Args:
         link (~chainer.Link): Link to flatten.
-        param_names (iterable): Parameter names to flatten,
-            e.g. ``('W', 'b')``.
-        attr_names (iterable): Attributes names to flatten,
-            e.g. ``('data', 'grad')``.
+        param_names (iterable): Parameter names to flatten.
+        attr_names (iterable): Attributes names to flatten.
+
+    Returns:
+        array: Array of flattened parameters.
     """
 
     params = []
@@ -80,7 +135,7 @@ def param_percentiles(params, sigma):
 
     Args:
         params (array): 1-dimensional NumPy or CuPy arryay.
-        sigma (tuple): Sigmas for which percentiles are computed.
+        sigma (tuple): Sigma values for which percentiles are computed.
 
     Returns:
         array: Array of percentiles.

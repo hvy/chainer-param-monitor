@@ -100,4 +100,6 @@ class ParameterStatistics(extension.Extension):
         return statistics.get_statistics(link, param_name, attr_name)
 
     def get_sparsity(self, link):
-        return statistics.get_sparsity(link, self._sparsity_include_bias)
+        param_names = ('W', 'b') if self._sparsity_include_bias else 'W'
+        attr_names = 'data'
+        return statistics.get_sparsity(link, param_names, attr_names)

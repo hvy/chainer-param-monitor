@@ -33,15 +33,15 @@ class ParameterStatistics(extension.Extension):
             attribute which is used as a part of a key in the report.
         trigger: Trigger that decides when to aggregate the results and report
             the values.
+        monitor_targets (iterable): Iterable of tuples ``(param, attr)`` where
+            ``param`` is ``W`` for weights or ``b`` for biases. ``attr`` may be
+            ``data`` or ``grad``. These values may however vary depending on
+            the type of ``links``.
         sparsity (bool): If ``True``, include sparsity statistics.
         sparsity_include_bias (bool): If ``True``, take biases into account
             when computing the sparsity statistics. Otherwise, only consider
             weights. Does nothing if ``sparsity`` is ``False``.
         prefix (str): Prefix to prepend to the report keys.
-        monitor_targets (iterable): Iterable of tuples ``(param, attr)`` where
-            ``param`` is ``W`` for weights or ``b`` for biases. ``attr`` may be
-            ``data`` or ``grad``. These values may however vary depending on
-            the type of ``links``.
     """
 
     default_name = 'parameter_statistics'

@@ -3,6 +3,7 @@ import cupy
 from functools import reduce
 
 
+# Statistic dictionaries will consist of items with the following key format.
 key_template = '{link_name}/{param_name}/{attr_name}'
 
 
@@ -14,7 +15,7 @@ def get_statistics(link, param_name, attr_name,
                                    param_name=param_name,
                                    attr_name=attr_name)
 
-    params = get_params(link, param_name, attr_name)
+    params = flattened_params(link, param_name, attr_name)
 
     stats = {}
 
@@ -52,7 +53,9 @@ def get_sparsity(link, include_bias=False):
     return { key: sparsity }
 
 
-def get_params(link, param_name, attr_name):
+def flattened_params(link, param_name, attr_name):
+
+    # TODO(hvy): Support iterable param_names and attr_names.
     xp = link.xp
     params = xp.array([], dtype=xp.float32)
 
